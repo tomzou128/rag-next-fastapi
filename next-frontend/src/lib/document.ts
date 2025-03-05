@@ -1,0 +1,47 @@
+/**
+ * Document API Service
+ *
+ * Service for interacting with the document management API endpoints.
+ */
+import axiosInstance from "@/lib/axios";
+import type { Document } from "@/types";
+
+/**
+ * Upload a document with metadata
+ */
+export async function uploadDocument(formData: FormData): Promise<Document> {
+  const response = await axiosInstance.post<Document>("/documents/", formData, {
+    headers: { "Content-Type": "multipart/form-data" },
+  });
+  return response.data;
+}
+
+/**
+ * List all uploaded documents
+ */
+export async function listDocuments(): Promise<Document[]> {
+  const response = await axiosInstance.get<Document[]>("/documents/");
+  return response.data;
+}
+
+/**
+ * Get a specific document by ID
+ */
+export async function getDocument(documentId: string): Promise<Document> {
+  const response = await axiosInstance.get<Document>(
+    `/documents/${documentId}`,
+  );
+  return response.data;
+}
+
+/**
+ * Delete a document by ID
+ */
+export async function deleteDocument(
+  documentId: string,
+  filename: string,
+): Promise<void> {
+  await axiosInstance.delete(
+    `/documents/${documentId}?filename=${encodeURIComponent(filename)}`,
+  );
+}
