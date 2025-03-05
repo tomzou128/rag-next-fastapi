@@ -27,12 +27,12 @@ router = APIRouter(prefix="/api/documents", tags=["documents"])
 
 @router.post("", response_model=DocumentResponse)
 async def upload_document(
-    # background_tasks: BackgroundTasks,
-    file: UploadFile = File(...),
-    title: str | None = Form(None),
-    description: str | None = Form(None),
-    document_service: DocumentService = Depends(get_document_service),
-    search_service: SearchService = Depends(get_search_service),
+        # background_tasks: BackgroundTasks,
+        file: UploadFile = File(...),
+        title: str | None = Form(None),
+        description: str | None = Form(None),
+        document_service: DocumentService = Depends(get_document_service),
+        search_service: SearchService = Depends(get_search_service),
 ):
     """
     Upload and process a PDF document.
@@ -62,17 +62,21 @@ async def upload_document(
         )
 
         await search_service.index_document(
-            document_response.id, document_response.title, chunks
+            document_response.id, title, chunks
         )
 
         return document_response
+    except HTTPException:
+        raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e)
+        )
 
 
 @router.get("/", response_model=List[DocumentInfo])
 async def list_documents(
-    storage_service: StorageService = Depends(get_storage_service),
+        storage_service: StorageService = Depends(get_storage_service),
 ):
     """
     List all uploaded documents.
@@ -106,7 +110,7 @@ async def list_documents(
 
 @router.get("/{document_id}", response_model=DocumentInfo)
 async def get_document(
-    document_id: str, storage_service: StorageService = Depends(get_storage_service)
+        document_id: str, storage_service: StorageService = Depends(get_storage_service)
 ):
     """
     Get document metadata by ID.
@@ -132,8 +136,8 @@ async def get_document(
 
 @router.get("/{document_id}/download")
 async def download_document(
-    document_id: str,
-    storage_service: StorageService = Depends(get_storage_service),
+        document_id: str,
+        storage_service: StorageService = Depends(get_storage_service),
 ):
     """
     Download a document.
@@ -163,9 +167,9 @@ async def download_document(
 
 @router.delete("/{document_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_document(
-    document_id: str,
-    storage_service: StorageService = Depends(get_storage_service),
-    search_service: SearchService = Depends(get_search_service),
+        document_id: str,
+        storage_service: StorageService = Depends(get_storage_service),
+        search_service: SearchService = Depends(get_search_service),
 ):
     try:
         await search_service.delete_document(document_id)

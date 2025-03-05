@@ -1,0 +1,28 @@
+[tool.poetry]
+name = "fastapi-backend"
+version = "0.1.0"
+description = ""
+authors = ["tomzou128 <tomzou128@gmail.com>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.12"
+fastapi = { extras = ["standard"], version = "^0.115.11" }
+uvicorn = "^0.34.0"
+pydantic-settings = "^2.8.1"
+elasticsearch = "^8.17.2"
+aiohttp = "^3.11.13"
+openai = "^1.65.3"
+boto3 = "^1.37.6"
+nltk = "^3.9.1"
+sentence-transformers = "^3.4.1"
+tiktoken = "^0.9.0"
+pymupdf = "^1.25.3"
+
+
+[tool.poetry.group.dev.dependencies]
+black = "^25.1.0"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

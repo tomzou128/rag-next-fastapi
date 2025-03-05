@@ -14,12 +14,6 @@ from app.config import settings
 from app.schemas.document import DocumentCreate, DocumentResponse
 from app.services.storage_service import StorageService
 
-# Download NLTK data for sentence tokenization
-try:
-    nltk.data.find("tokenizers/punkt")
-except LookupError:
-    nltk.download("punkt")
-
 logger = logging.getLogger(__name__)
 
 
@@ -33,6 +27,9 @@ class DocumentService:
     3. Document metadata extraction
     """
 
+    # NLTK resources to download/check
+    NLTK_RESOURCES = [("tokenizers/punkt", "punkt")]
+
     def __init__(self, storage_service: StorageService):
         """
         Initialize the document service.
@@ -41,9 +38,26 @@ class DocumentService:
             storage_service: The storage service for file operations
         """
         self.storage_service = storage_service
+        self._initialize_nltk_resources()
+
+    def _initialize_nltk_resources(self) -> None:
+        """
+        Initialize NLTK resources needed for text processing.
+        Downloads required resources if they're not already available.
+        """
+        for resource_path, resource_name in self.NLTK_RESOURCES:
+            try:
+                # Check if the resource is already downloaded
+                nltk.data.find(resource_path)
+                logger.debug(f"NLTK resource '{resource_name}' is already available")
+            except LookupError:
+                # Download the resource if not found
+                logger.info(f"Downloading NLTK resource: {resource_name}")
+                nltk.download(resource_name, quiet=True)
+                logger.info(f"Successfully downloaded NLTK resource: {resource_name}")
 
     async def process_pdf(
-        self, file: UploadFile, document_create: DocumentCreate
+            self, file: UploadFile, document_create: DocumentCreate
     ) -> Tuple[DocumentResponse, List[Dict[str, Any]]]:
         """
         Process an uploaded PDF file:
@@ -85,21 +99,14 @@ class DocumentService:
                 io.BytesIO(file_content), document_id
             )
 
-            presigned_url_info = self.storage_service.generate_presigned_url(
-                file_id=document_id,
-            )
-
             # Create document response
             document_response = DocumentResponse(
                 id=document_id,
-                title=document_create.title,
-                description=document_create.description,
                 filename=filename,
                 file_size=len(file_content),
                 page_count=doc_info["page_count"],
                 upload_date=datetime.now(timezone.utc),
                 processing_status="processed",
-                download_url=presigned_url_info["url"],
             )
 
             return document_response, chunks
@@ -115,7 +122,7 @@ class DocumentService:
             await file.seek(0)
 
     def _extract_pdf_content(
-        self, file_bytes: io.BytesIO, document_id: str
+            self, file_bytes: io.BytesIO, document_id: str
     ) -> Tuple[Dict[str, Any], List[Dict[str, Any]]]:
         """
         Extract text and metadata from a PDF file.
@@ -162,8 +169,15 @@ class DocumentService:
         finally:
             file_bytes.seek(0)
 
+    def _tokenize_text(self, text: str) -> List[str]:
+        try:
+            return sent_tokenize(text)
+        except Exception as e:
+            logger.warning(f"Sentence tokenization failed: {str(e)}. Using fallback.")
+            return [s.strip() + "." for s in text.split(".") if s.strip()]
+
     def _chunk_text(
-        self, text: str, document_id: str, page_num: int
+            self, text: str, document_id: str, page_num: int
     ) -> List[Dict[str, Any]]:
         """
         Split text into manageable chunks for processing and indexing.
@@ -180,12 +194,7 @@ class DocumentService:
         text = re.sub(r"\s+", " ", text).strip()
 
         # Use NLTK to split into sentences
-        try:
-            sentences = sent_tokenize(text)
-        except Exception as e:
-            logger.warning(f"Sentence tokenization failed: {str(e)}. Using fallback.")
-            # Fallback: split by periods and maintain some context
-            sentences = [s.strip() + "." for s in text.split(".") if s.strip()]
+        sentences = self._tokenize_text(text)
 
         chunks = []
         current_chunk = ""
@@ -195,8 +204,8 @@ class DocumentService:
             # If adding this sentence exceeds chunk size and we already have content,
             # finalize the current chunk and start a new one
             if (
-                len(current_chunk) + len(sentence) > settings.CHUNK_SIZE
-                and current_chunk
+                    len(current_chunk) + len(sentence) > settings.CHUNK_SIZE
+                    and current_chunk
             ):
                 chunk_id = str(uuid.uuid4())
                 chunks.append(
@@ -210,7 +219,7 @@ class DocumentService:
 
                 # Start new chunk with overlap (keeping some context from previous chunk)
                 current_chunk = (
-                    current_chunk[-settings.CHUNK_OVERLAP :] + " " + sentence
+                        current_chunk[-settings.CHUNK_OVERLAP:] + " " + sentence
                 )
             else:
                 # Add sentence to current chunk

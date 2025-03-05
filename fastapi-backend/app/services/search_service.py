@@ -157,7 +157,7 @@ class SearchService:
                 success, failed = await async_bulk(self.es, actions)
                 logger.info(f"Indexed {success} chunks for document {document_id}")
                 if failed:
-                    logger.warning( f"Failed to index {len(failed)} chunks: {failed}" )
+                    logger.warning(f"Failed to index {len(failed)} chunks: {failed}")
             else:
                 logger.warning(f"No chunks to index for document {document_id}")
 

@@ -26,8 +26,5 @@ class DocumentResponse(DocumentBase):
     page_count: int = Field(..., description="Number of pages in the document")
     upload_date: datetime = Field(..., description="Document upload timestamp")
     processing_status: str = Field(..., description="Document processing status")
-    download_url: Optional[str] = Field(
-        None, description="URL to download the document"
-    )
 
     model_config = ConfigDict(from_attributes=True)

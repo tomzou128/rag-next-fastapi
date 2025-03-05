@@ -69,12 +69,12 @@ class StorageService:
             self.client.create_bucket(Bucket=settings.MINIO_BUCKET_NAME)
 
     def upload_file(
-        self,
-        file_obj: BinaryIO,
-        filename: str,
-        content_type: str,
-        file_id: Optional[str] = None,
-        metadata: Optional[Dict[str, str]] = None,
+            self,
+            file_obj: BinaryIO,
+            filename: str,
+            content_type: str,
+            file_id: Optional[str] = None,
+            metadata: Optional[Dict[str, str]] = None,
     ) -> Dict[str, str] | None:
         """
         Upload a file to storage.
@@ -137,9 +137,9 @@ class StorageService:
                 pass
 
     def list_files(
-        self,
-        prefix: str = "",
-        max_keys: int = 1000,
+            self,
+            prefix: str = "",
+            max_keys: int = 1000,
     ) -> list[dict]:
         """
         List files in the storage bucket with pagination support.
@@ -306,9 +306,9 @@ class StorageService:
                 )
 
     def generate_presigned_url(
-        self,
-        file_id: str,
-        expiration: int = 3600,
+            self,
+            file_id: str,
+            expiration: int = 3600,
     ) -> Dict[str, str]:
         """
         Generate a presigned URL for direct file access.
@@ -346,7 +346,6 @@ class StorageService:
                 "expiration_seconds": expiration,
             }
         except HTTPException:
-            # Re-raise HTTPExceptions from get_file_info
             raise
         except Exception as e:
             error_msg = f"Error generating presigned URL: {str(e)}"
