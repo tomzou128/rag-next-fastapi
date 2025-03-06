@@ -1,11 +1,21 @@
 // Document interface
 export interface Document {
   id: string;
-  title: string;
-  description?: string;
+  contentType: string;
   filename: string;
-  fileSize: number;
-  pageCount: number;
-  uploadDate: Date;
-  processingStatus: string;
+  size: number;
+  uploadDate?: Date;
+  lastModified?: Date;
+  metadata?: {
+    filename: string;
+    title: string;
+    description: string;
+    pageCount: string;
+    uploadDate?: Date;
+  };
+}
+
+export interface DocumentUpdateResponse {
+  id: string;
+  filename: string;
 }

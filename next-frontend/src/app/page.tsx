@@ -1,5 +1,3 @@
-"use client";
-
 import React from "react";
 import {
   Box,
@@ -8,18 +6,20 @@ import {
   CardActions,
   CardContent,
   Container,
-  Grid,
   Typography,
 } from "@mui/material";
+import Grid from "@mui/material/Grid2";
 import Link from "next/link";
 import SearchIcon from "@mui/icons-material/Search";
 import FolderIcon from "@mui/icons-material/Folder";
 import QuestionAnswerIcon from "@mui/icons-material/QuestionAnswer";
 import AnalyticsIcon from "@mui/icons-material/Analytics";
+import { Toaster } from "sonner";
 
 export default function Home() {
   return (
     <Box component="main">
+      <Toaster />
       {/* Hero Section */}
       <Box
         sx={{
@@ -94,7 +94,7 @@ export default function Home() {
         </Typography>
 
         <Grid container spacing={4}>
-          <Grid item xs={12} md={4}>
+          <Grid size={{ xs: 12, md: 4 }}>
             <Card sx={{ height: "100%" }}>
               <CardContent>
                 <Box display="flex" justifyContent="center" mb={2}>
@@ -122,7 +122,7 @@ export default function Home() {
             </Card>
           </Grid>
 
-          <Grid item xs={12} md={4}>
+          <Grid size={{ xs: 12, md: 4 }}>
             <Card sx={{ height: "100%" }}>
               <CardContent>
                 <Box display="flex" justifyContent="center" mb={2}>
@@ -139,7 +139,7 @@ export default function Home() {
                 <Typography variant="body1" color="text.secondary">
                   Find information using both keyword and semantic search. Our
                   hybrid approach helps you find content even when exact
-                  keywords aren't present.
+                  keywords aren&#39;t present.
                 </Typography>
               </CardContent>
               <CardActions sx={{ justifyContent: "center", pb: 2 }}>
@@ -150,7 +150,7 @@ export default function Home() {
             </Card>
           </Grid>
 
-          <Grid item xs={12} md={4}>
+          <Grid size={{ xs: 12, md: 4 }}>
             <Card sx={{ height: "100%" }}>
               <CardContent>
                 <Box display="flex" justifyContent="center" mb={2}>
@@ -194,7 +194,7 @@ export default function Home() {
           </Typography>
 
           <Grid container spacing={3} alignItems="center">
-            <Grid item xs={12} md={6}>
+            <Grid size={{ xs: 12, md: 6 }}>
               <Box sx={{ pr: { md: 4 } }}>
                 <Typography variant="h5" gutterBottom>
                   Retrieval Augmented Generation
@@ -222,7 +222,7 @@ export default function Home() {
                 </Typography>
               </Box>
             </Grid>
-            <Grid item xs={12} md={6}>
+            <Grid size={{ xs: 12, md: 6 }}>
               <Box
                 sx={{
                   display: "flex",
