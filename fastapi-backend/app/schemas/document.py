@@ -11,12 +11,7 @@ class DocumentUpdateRequest(BaseModel):
 
     id: str | None = Field(None, description="Document ID")
     title: str = Field(..., description="Document title")
-    description: str | None = Field(None, description="Document description")
-
-    model_config = ConfigDict(
-        alias_generator=to_camel,
-        populate_by_name=True,
-    )
+    description: str = Field(..., description="Document description")
 
 
 class DocumentUpdateResponse(BaseModel):
@@ -24,11 +19,6 @@ class DocumentUpdateResponse(BaseModel):
 
     id: str = Field(..., description="Document ID")
     filename: str = Field(..., description="Document filename")
-
-    model_config = ConfigDict(
-        alias_generator=to_camel,
-        populate_by_name=True,
-    )
 
 
 class DocumentVO(BaseModel):
