@@ -2,7 +2,6 @@
 API endpoints for document operations.
 """
 
-from datetime import datetime
 from typing import List
 
 from fastapi import (
@@ -16,8 +15,11 @@ from fastapi import (
 from starlette import status
 from starlette.responses import StreamingResponse
 
-from app.schemas.document import DocumentResponse, DocumentCreate
-from app.schemas.storage import DocumentInfo
+from app.schemas.document import (
+    DocumentUpdateRequest,
+    DocumentVO,
+    DocumentUpdateResponse,
+)
 from app.services.document_service import DocumentService, get_document_service
 from app.services.search_service import SearchService, get_search_service
 from app.services.storage_service import StorageService, get_storage_service
@@ -25,14 +27,14 @@ from app.services.storage_service import StorageService, get_storage_service
 router = APIRouter(prefix="/api/documents", tags=["documents"])
 
 
-@router.post("", response_model=DocumentResponse)
+@router.post("", response_model=DocumentUpdateResponse)
 async def upload_document(
-        # background_tasks: BackgroundTasks,
-        file: UploadFile = File(...),
-        title: str | None = Form(None),
-        description: str | None = Form(None),
-        document_service: DocumentService = Depends(get_document_service),
-        search_service: SearchService = Depends(get_search_service),
+    # background_tasks: BackgroundTasks,
+    file: UploadFile = File(...),
+    title: str | None = Form(None),
+    description: str | None = Form(None),
+    document_service: DocumentService = Depends(get_document_service),
+    search_service: SearchService = Depends(get_search_service),
 ):
     """
     Upload and process a PDF document.
@@ -54,16 +56,16 @@ async def upload_document(
 
     try:
         # Create document metadata
-        document_create = DocumentCreate(title=title, description=description)
+        document_create = DocumentUpdateRequest(
+            id=None, title=title, description=description
+        )
 
         # Process document and get chunks
         document_response, chunks = await document_service.process_pdf(
             file, document_create
         )
 
-        await search_service.index_document(
-            document_response.id, title, chunks
-        )
+        await search_service.index_document(document_response["id"], title, chunks)
 
         return document_response
     except HTTPException:
@@ -74,9 +76,9 @@ async def upload_document(
         )
 
 
-@router.get("/", response_model=List[DocumentInfo])
+@router.get("", response_model=List[DocumentVO])
 async def list_documents(
-        storage_service: StorageService = Depends(get_storage_service),
+    storage_service: StorageService = Depends(get_storage_service),
 ):
     """
     List all uploaded documents.
@@ -85,20 +87,20 @@ async def list_documents(
         List of document metadata
     """
     try:
-        documents = storage_service.list_files()
-        document_list = [
-            DocumentInfo.model_validate(
-                {
-                    **document,
-                    "last_modified": (
-                        document["last_modified"].isoformat()
-                        if isinstance(document.get("last_modified"), datetime)
-                        else None
-                    ),
-                }
-            )
-            for document in documents
-        ]
+        document_list = storage_service.list_files()
+        # document_list = [
+        #     DocumentVO.model_validate(
+        #         {
+        #             **document,
+        #             "last_modified": (
+        #                 document["last_modified"].isoformat()
+        #                 if isinstance(document.get("last_modified"), datetime)
+        #                 else None
+        #             ),
+        #         }
+        #     )
+        #     for document in documents
+        # ]
         return document_list
     except HTTPException:
         raise
@@ -108,9 +110,9 @@ async def list_documents(
         )
 
 
-@router.get("/{document_id}", response_model=DocumentInfo)
+@router.get("/{document_id}", response_model=DocumentVO)
 async def get_document(
-        document_id: str, storage_service: StorageService = Depends(get_storage_service)
+    document_id: str, storage_service: StorageService = Depends(get_storage_service)
 ):
     """
     Get document metadata by ID.
@@ -123,9 +125,7 @@ async def get_document(
     """
     try:
         document = storage_service.get_file_info(document_id)
-        if isinstance(document.get("last_modified"), datetime):
-            document["last_modified"] = document["last_modified"].isoformat()
-        return DocumentInfo.model_validate(document)
+        return document
     except HTTPException:
         raise
     except Exception as e:
@@ -136,8 +136,8 @@ async def get_document(
 
 @router.get("/{document_id}/download")
 async def download_document(
-        document_id: str,
-        storage_service: StorageService = Depends(get_storage_service),
+    document_id: str,
+    storage_service: StorageService = Depends(get_storage_service),
 ):
     """
     Download a document.
@@ -167,9 +167,9 @@ async def download_document(
 
 @router.delete("/{document_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_document(
-        document_id: str,
-        storage_service: StorageService = Depends(get_storage_service),
-        search_service: SearchService = Depends(get_search_service),
+    document_id: str,
+    storage_service: StorageService = Depends(get_storage_service),
+    search_service: SearchService = Depends(get_search_service),
 ):
     try:
         await search_service.delete_document(document_id)

@@ -3,7 +3,7 @@ import logging
 import re
 import uuid
 from datetime import datetime, timezone
-from typing import List, Dict, Tuple, Any
+from typing import List, Dict, Any
 
 import fitz  # PyMuPDF
 import nltk
@@ -11,7 +11,7 @@ from fastapi import UploadFile, HTTPException, Request
 from nltk.tokenize import sent_tokenize
 
 from app.config import settings
-from app.schemas.document import DocumentCreate, DocumentResponse
+from app.schemas.document import DocumentUpdateRequest
 from app.services.storage_service import StorageService
 
 logger = logging.getLogger(__name__)
@@ -57,8 +57,8 @@ class DocumentService:
                 logger.info(f"Successfully downloaded NLTK resource: {resource_name}")
 
     async def process_pdf(
-            self, file: UploadFile, document_create: DocumentCreate
-    ) -> Tuple[DocumentResponse, List[Dict[str, Any]]]:
+        self, file: UploadFile, document_create: DocumentUpdateRequest
+    ) -> tuple[dict, list[dict[str, Any]]] | None:
         """
         Process an uploaded PDF file:
         1. Upload to storage
@@ -75,39 +75,35 @@ class DocumentService:
         Raises:
             HTTPException: If processing fails
         """
+        document_id = str(uuid.uuid4())
+
         try:
             file_content = await file.read()
-
-            # Upload to MinIO
-            upload_result = self.storage_service.upload_file(
-                file_obj=io.BytesIO(file_content),
-                filename=file.filename or "document.pdf",
-                content_type=file.content_type or "application/pdf",
-                metadata={
-                    "title": document_create.title,
-                    "description": document_create.description,
-                    "upload_date": datetime.now(timezone.utc).isoformat(),
-                    "filename": file.filename or "document.pdf",
-                },
-            )
-
-            document_id = upload_result["id"]
-            filename = upload_result["filename"]
 
             # Process with PyMuPDF
             doc_info, chunks = self._extract_pdf_content(
                 io.BytesIO(file_content), document_id
             )
 
-            # Create document response
-            document_response = DocumentResponse(
-                id=document_id,
-                filename=filename,
-                file_size=len(file_content),
-                page_count=doc_info["page_count"],
-                upload_date=datetime.now(timezone.utc),
-                processing_status="processed",
+            # Upload to MinIO
+            upload_result = self.storage_service.upload_file(
+                file_id=document_id,
+                file_obj=io.BytesIO(file_content),
+                filename=file.filename,
+                content_type=file.content_type,
+                metadata={
+                    "title": document_create.title,
+                    "description": document_create.description,
+                    "page-count": str(doc_info["page_count"]),
+                    "upload-date": datetime.now(timezone.utc).isoformat(),
+                },
             )
+
+            # Create document response
+            document_response = {
+                "id": document_id,
+                "filename": file.filename,
+            }
 
             return document_response, chunks
         except HTTPException:
@@ -122,8 +118,8 @@ class DocumentService:
             await file.seek(0)
 
     def _extract_pdf_content(
-            self, file_bytes: io.BytesIO, document_id: str
-    ) -> Tuple[Dict[str, Any], List[Dict[str, Any]]]:
+        self, file_bytes: io.BytesIO, document_id: str
+    ) -> tuple[dict[str, Any], list[dict[str, Any]]] | None:
         """
         Extract text and metadata from a PDF file.
 
@@ -177,7 +173,7 @@ class DocumentService:
             return [s.strip() + "." for s in text.split(".") if s.strip()]
 
     def _chunk_text(
-            self, text: str, document_id: str, page_num: int
+        self, text: str, document_id: str, page_num: int
     ) -> List[Dict[str, Any]]:
         """
         Split text into manageable chunks for processing and indexing.
@@ -204,8 +200,8 @@ class DocumentService:
             # If adding this sentence exceeds chunk size and we already have content,
             # finalize the current chunk and start a new one
             if (
-                    len(current_chunk) + len(sentence) > settings.CHUNK_SIZE
-                    and current_chunk
+                len(current_chunk) + len(sentence) > settings.CHUNK_SIZE
+                and current_chunk
             ):
                 chunk_id = str(uuid.uuid4())
                 chunks.append(
@@ -219,7 +215,7 @@ class DocumentService:
 
                 # Start new chunk with overlap (keeping some context from previous chunk)
                 current_chunk = (
-                        current_chunk[-settings.CHUNK_OVERLAP:] + " " + sentence
+                    current_chunk[-settings.CHUNK_OVERLAP :] + " " + sentence
                 )
             else:
                 # Add sentence to current chunk

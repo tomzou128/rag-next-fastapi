@@ -1,6 +1,7 @@
 import io
 import logging
 import uuid
+from datetime import datetime
 from typing import BinaryIO, Dict, Tuple, Optional, Any
 
 import boto3
@@ -69,12 +70,12 @@ class StorageService:
             self.client.create_bucket(Bucket=settings.MINIO_BUCKET_NAME)
 
     def upload_file(
-            self,
-            file_obj: BinaryIO,
-            filename: str,
-            content_type: str,
-            file_id: Optional[str] = None,
-            metadata: Optional[Dict[str, str]] = None,
+        self,
+        file_obj: BinaryIO,
+        filename: str,
+        content_type: str,
+        file_id: Optional[str] = None,
+        metadata: Optional[Dict[str, str]] = None,
     ) -> Dict[str, str] | None:
         """
         Upload a file to storage.
@@ -118,8 +119,8 @@ class StorageService:
             logger.info(f"Uploaded file '{filename}' with ID {file_id}")
             return {
                 "id": file_id,
-                "filename": filename,
                 "content_type": content_type,
+                "filename": filename,
                 "metadata": file_metadata,
             }
         except Exception as e:
@@ -137,9 +138,9 @@ class StorageService:
                 pass
 
     def list_files(
-            self,
-            prefix: str = "",
-            max_keys: int = 1000,
+        self,
+        prefix: str = "",
+        max_keys: int = 1000,
     ) -> list[dict]:
         """
         List files in the storage bucket with pagination support.
@@ -162,26 +163,8 @@ class StorageService:
             files = []
             if "Contents" in response:
                 for obj in response["Contents"]:
-                    try:
-                        key = obj["Key"]
-                        head = self.client.head_object(Bucket=self.bucket_name, Key=key)
-                        files.append(
-                            {
-                                "id": key,
-                                "size": obj["Size"],
-                                "last_modified": obj["LastModified"],
-                                "filename": head.get("Metadata", {}).get(
-                                    "filename", key
-                                ),
-                                "content_type": head.get(
-                                    "ContentType", "application/octet-stream"
-                                ),
-                                "metadata": head.get("Metadata", {}),
-                            }
-                        )
-                    except ClientError:
-                        # Skip files that might have been deleted during iteration
-                        continue
+                    file_info = self.get_file_info(obj["Key"])
+                    files.append(file_info)
             return files
         except Exception as e:
             error_msg = f"Error listing files: {str(e)}"
@@ -207,11 +190,14 @@ class StorageService:
             head = self.client.head_object(Bucket=self.bucket_name, Key=file_id)
             return {
                 "id": file_id,
-                "size": head["ContentLength"],
-                "last_modified": head["LastModified"],
-                "filename": head.get("Metadata", {}).get("filename", file_id),
                 "content_type": head.get("ContentType", "application/octet-stream"),
-                "metadata": head.get("Metadata", {}),
+                "filename": head["Metadata"]["filename"],
+                "size": head["ContentLength"],
+                "upload_date": datetime.fromisoformat(head["Metadata"]["upload-date"]),
+                "last_modified": head["LastModified"],
+                "metadata": {
+                    k.replace("-", "_"): v for k, v in head["Metadata"].items()
+                },
             }
         except ClientError as e:
             error_code = e.response.get("Error", {}).get("Code", "")
@@ -306,9 +292,9 @@ class StorageService:
                 )
 
     def generate_presigned_url(
-            self,
-            file_id: str,
-            expiration: int = 3600,
+        self,
+        file_id: str,
+        expiration: int = 3600,
     ) -> Dict[str, str]:
         """
         Generate a presigned URL for direct file access.

@@ -1,3 +1,8 @@
+from typing import Any
+
+from pydantic.alias_generators import to_camel
+
+
 def parse_es_response_flexible(
     response: dict[str, any],
     include_metadata: bool = True,
@@ -50,3 +55,11 @@ def parse_es_response_flexible(
 
     parsed_result["hits"] = hits_data
     return parsed_result
+
+
+def camelize_dict(d: dict[str, Any]) -> dict[str, Any]:
+    """Convert all keys in a dictionary from snake_case to camelCase"""
+    if not isinstance(d, dict):
+        return d
+
+    return {to_camel(k): v for k, v in d.items()}
