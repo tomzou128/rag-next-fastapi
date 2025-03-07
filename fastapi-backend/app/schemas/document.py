@@ -45,3 +45,12 @@ class DocumentVO(BaseModel):
         }
         # Apply the camelCase conversion to the top-level fields
         return {to_camel(k): v for k, v in data.items()}
+
+
+class DocumentPresignedURLResponse(BaseModel):
+    id: str = Field(..., description="Document ID")
+    content_type: str = Field(..., description="Document content type")
+    filename: str = Field(..., description="Document filename")
+    url: str = Field(..., description="Document pre-signed url")
+
+    model_config = ConfigDict(alias_generator=to_camel, populate_by_name=True)

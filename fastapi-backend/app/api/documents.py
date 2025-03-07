@@ -18,8 +18,9 @@ from starlette.responses import StreamingResponse
 
 from app.schemas.document import (
     DocumentUpdateRequest,
-    DocumentVO,
     DocumentUpdateResponse,
+    DocumentVO,
+    DocumentPresignedURLResponse,
 )
 from app.services.document_service import DocumentService, get_document_service
 from app.services.search_service import SearchService, get_search_service
@@ -30,7 +31,9 @@ logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api/documents", tags=["documents"])
 
 
-@router.post("", response_model=DocumentUpdateResponse)
+@router.post(
+    "", response_model=DocumentUpdateResponse, status_code=status.HTTP_201_CREATED
+)
 async def upload_document(
     file: UploadFile = File(...),
     title: str = Form(...),
@@ -106,15 +109,30 @@ async def download_document(
     storage_service: StorageService = Depends(get_storage_service),
 ):
     try:
-        file_data, content_type, filename = storage_service.download_file(document_id)
+        download_info = storage_service.download_file(document_id)
 
         return StreamingResponse(
-            file_data,
-            media_type=content_type,
-            headers={"Content-Disposition": f"attachment; filename={filename}"},
+            download_info["file_data"],
+            media_type=download_info["content_type"],
+            headers={
+                "Content-Disposition": f"attachment; filename={download_info["filename"]}"
+            },
         )
     except HTTPException:
         raise
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e)
+        )
+
+
+@router.get("/{file_id}/presigned", response_model=DocumentPresignedURLResponse)
+async def get_presigned_url(
+    document_id: str,
+    storage_service: StorageService = Depends(get_storage_service),
+):
+    try:
+        return storage_service.generate_presigned_url(document_id)
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e)

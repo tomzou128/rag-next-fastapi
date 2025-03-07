@@ -19,3 +19,10 @@ export interface DocumentUpdateResponse {
   id: string;
   filename: string;
 }
+
+export interface DocumentPresignedURLResponse {
+  id: string;
+  contentType: string;
+  filename: string;
+  url: string;
+}

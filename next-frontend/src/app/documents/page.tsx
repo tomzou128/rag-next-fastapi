@@ -57,17 +57,14 @@ export default function DocumentsPage() {
     try {
       setLoading(true);
 
-      // Create form data
       const formData = new FormData();
       formData.append("file", file);
       formData.append("title", title);
       if (description) formData.append("description", description);
 
-      // Upload document
       const response = await uploadDocument(formData);
       toast.success(`${response.filename} uploaded successfully.`);
-
-      fetchDocuments();
+      await fetchDocuments();
     } catch (err) {
       console.error("Error uploading document:", err);
       toast.error("Failed to upload document. Please try again.");
@@ -78,18 +75,20 @@ export default function DocumentsPage() {
 
   const handleDownload = async (docuemntId: string) => {
     try {
-      const blob = await downloadDocument(docuemntId);
-      const url = window.URL.createObjectURL(blob);
+      setLoading(true);
+
+      const { url, filename } = await downloadDocument(docuemntId);
       const link = document.createElement("a");
       link.href = url;
-      // const fileInfo = files.find((f) => f.id === fileId);
-      // link.download = fileInfo?.originalFilename || "downloaded_file"; //
+      link.download = filename;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
-      window.URL.revokeObjectURL(url);
     } catch (error) {
       console.error("Error downloading file:", error);
+      toast.error("Failed to download document. Please try again.");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -99,12 +98,9 @@ export default function DocumentsPage() {
   const handleDelete = async (documentId: string) => {
     try {
       setLoading(true);
-
-      // Delete document
       await deleteDocument(documentId);
       toast.success("Document deleted successfully.");
-
-      fetchDocuments();
+      await fetchDocuments();
     } catch (err) {
       console.error("Error deleting document:", err);
       toast.error("Failed to delete document. Please try again.");
@@ -137,7 +133,7 @@ export default function DocumentsPage() {
           ) : documents.length > 0 ? (
             <DocumentList
               documents={documents}
-              disableUpload={loading}
+              loading={loading}
               onUpload={handleUpload}
               onDownload={handleDownload}
               onDelete={handleDelete}

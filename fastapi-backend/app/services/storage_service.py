@@ -255,7 +255,7 @@ class StorageService:
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=error_msg
             )
 
-    def download_file(self, file_id: str) -> Tuple[io.BytesIO, str, str]:
+    def download_file(self, file_id: str) -> dict[str, str | io.BytesIO]:
         """
         Download a file from storage.
 
@@ -276,7 +276,13 @@ class StorageService:
             content_type = response.get("ContentType", "application/octet-stream")
             filename = response.get("Metadata", {}).get("filename", file_id)
 
-            return file_data, content_type, filename
+            return {
+                "id": file_id,
+                "filename": filename,
+                "content_type": content_type,
+                "file_data": file_data,
+            }
+
         except ClientError as e:
             error_code = e.response.get("Error", {}).get("Code", "")
             if error_code == "NoSuchKey":
@@ -295,7 +301,7 @@ class StorageService:
         self,
         file_id: str,
         expiration: int = 3600,
-    ) -> Dict[str, str]:
+    ) -> dict[str, str]:
         """
         Generate a presigned URL for direct file access.
 
@@ -326,9 +332,10 @@ class StorageService:
             )
 
             return {
-                "url": url,
+                "id": file_id,
                 "content_type": content_type,
                 "filename": filename,
+                "url": url,
                 "expiration_seconds": expiration,
             }
         except HTTPException:

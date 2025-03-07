@@ -39,7 +39,7 @@ import DocumentInfoDialog from "@/components/documents/DocumentInfoDialog";
 
 interface DocumentListProps {
   documents: Document[];
-  disableUpload?: boolean;
+  loading?: boolean;
   onUpload: (file: File, title: string, description?: string) => Promise<void>;
   onDownload: (documentId: string) => Promise<void>;
   onDelete: (documentId: string) => Promise<void>;
@@ -47,12 +47,11 @@ interface DocumentListProps {
 
 export default function DocumentList({
   documents,
-  disableUpload = false,
+  loading = false,
   onUpload,
   onDownload,
   onDelete,
 }: DocumentListProps) {
-  // State for dialogs
   const [uploadDialogOpen, setUploadDialogOpen] = useState<boolean>(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState<boolean>(false);
   const [infoDialogOpen, setInfoDialogOpen] = useState<boolean>(false);
@@ -82,8 +81,8 @@ export default function DocumentList({
   };
 
   // Handle document download
-  const handleDownload = (documentId: string) => {
-    onDownload(documentId);
+  const handleDownload = (document: Document) => {
+    onDownload(document.id);
   };
 
   return (
@@ -103,7 +102,7 @@ export default function DocumentList({
           </Typography>
           <IconButton
             onClick={() => setUploadDialogOpen(true)}
-            disabled={disableUpload}
+            disabled={loading}
           >
             <Add />
           </IconButton>
@@ -183,7 +182,7 @@ export default function DocumentList({
                     <Tooltip title="Download">
                       <IconButton
                         size="small"
-                        onClick={() => handleDownload(document.id)}
+                        onClick={() => handleDownload(document)}
                       >
                         <DownloadIcon />
                       </IconButton>
@@ -210,7 +209,7 @@ export default function DocumentList({
         onClose={() => setUploadDialogOpen(false)}
         open={uploadDialogOpen}
         onUpload={onUpload}
-        disabled={disableUpload}
+        disabled={loading}
       />
 
       {/* Document Info Dialog */}

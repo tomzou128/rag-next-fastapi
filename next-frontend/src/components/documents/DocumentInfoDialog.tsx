@@ -22,7 +22,7 @@ interface DocumentInfoDialogProps {
   document: Document | null;
   open: boolean;
   onClose: () => void;
-  onDownload: (documentId: string) => void;
+  onDownload: (document: Document) => void;
 }
 
 export default function DocumentInfoDialog({
@@ -45,7 +45,7 @@ export default function DocumentInfoDialog({
             top: 8,
           }}
         >
-          <IconButton onClick={() => onDownload(document.id)}>
+          <IconButton onClick={() => onDownload(document)}>
             <DownloadIcon />
           </IconButton>
           <IconButton aria-label="close" onClick={onClose}>

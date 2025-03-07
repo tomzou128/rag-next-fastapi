@@ -78,11 +78,7 @@ class SearchService:
         mapping = {
             "mappings": {
                 "properties": {
-                    # Document metadata
-                    "document_id": {"type": "keyword"},
                     "chunk_id": {"type": "keyword"},
-                    "page_number": {"type": "integer"},
-                    # Document content for text search
                     "text": {
                         "type": "text",
                         "analyzer": "standard",
@@ -96,9 +92,11 @@ class SearchService:
                         "index": True,  # Enable vector search
                         "similarity": "cosine",  # Use cosine similarity
                     },
-                    # Additional metadata
-                    "title": {"type": "text"},
                     "indexed_at": {"type": "date"},
+                    # Document metadata
+                    "document_id": {"type": "keyword"},
+                    "document_title": {"type": "text"},
+                    "page_number": {"type": "integer"},
                 }
             },
             "settings": {
@@ -141,12 +139,12 @@ class SearchService:
                         "_index": self.index_name,
                         "_id": chunk["chunk_id"],
                         "_source": {
-                            "document_id": document_id,
                             "chunk_id": chunk["chunk_id"],
-                            "page_number": chunk["page_number"],
                             "text": chunk["text"],
                             "embedding": chunk["embedding"],
-                            "title": document_title,
+                            "document_id": document_id,
+                            "document_title": document_title,
+                            "page_number": chunk["page_number"],
                             "indexed_at": datetime.now(timezone.utc).isoformat(),
                         },
                     }
@@ -242,22 +240,15 @@ class SearchService:
                 }
 
                 # Execute keyword search
-                keyword_results = self.es.search(
+                response = await self.es.search(
                     index=settings.ELASTICSEARCH_INDEX_NAME, body=keyword_query
                 )
 
-                # Process results
-                for hit in keyword_results["hits"]["hits"]:
-                    results.append(
-                        {
-                            "document_id": hit["_source"]["document_id"],
-                            "document_title": hit["_source"]["title"],
-                            "page_number": hit["_source"]["page_number"],
-                            "text": hit["_source"]["text"],
-                            "score": hit["_score"],
-                            "search_type": "keyword",
-                        }
-                    )
+                keyword_results = parse_es_response_flexible(
+                    response, include_metadata=False, ignore_fields=["embedding"]
+                )
+
+                results.extend(keyword_results["hits"])
 
             if search_type == SearchType.SEMANTIC or search_type == SearchType.HYBRID:
                 # Generate query embedding
@@ -276,22 +267,15 @@ class SearchService:
                 }
 
                 # Execute semantic search
-                semantic_results = await self.es.search(
+                response = await self.es.search(
                     index=settings.ELASTICSEARCH_INDEX_NAME, body=semantic_query
                 )
 
-                # Process results
-                for hit in semantic_results["hits"]["hits"]:
-                    results.append(
-                        {
-                            "document_id": hit["_source"]["document_id"],
-                            "document_title": hit["_source"]["title"],
-                            "page_number": hit["_source"]["page_number"],
-                            "text": hit["_source"]["text"],
-                            "score": hit["_score"],
-                            "search_type": "semantic",
-                        }
-                    )
+                semantic_results = parse_es_response_flexible(
+                    response, include_metadata=False, ignore_fields=["embedding"]
+                )
+
+                results.extend(semantic_results["hits"])
 
             # For hybrid search, combine and deduplicate results
             if search_type == SearchType.HYBRID:
@@ -300,7 +284,7 @@ class SearchService:
                 deduplicated_results = []
 
                 for result in results:
-                    chunk_id = f"{result['document_id']}_{result['page_number']}_{result['text'][:50]}"
+                    chunk_id = result["source"]["chunk_id"]
                     if chunk_id not in seen_chunks:
                         seen_chunks.add(chunk_id)
                         deduplicated_results.append(result)

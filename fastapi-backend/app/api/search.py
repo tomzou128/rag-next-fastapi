@@ -6,6 +6,7 @@ import json
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 from fastapi.responses import StreamingResponse
+from starlette import status
 
 from app.schemas.rag import RAGRequest, RAGResponse
 from app.schemas.search import (
@@ -49,18 +50,16 @@ async def search_documents(
             document_ids=request.document_ids,
         )
 
-        # Transform to response model
         search_results = [
             SearchResult(
-                document_id=result["document_id"],
-                document_title=result["document_title"],
-                page_number=result["page_number"],
-                text=result["text"],
+                document_id=result["source"]["document_id"],
+                document_title=result["source"]["document_title"],
+                page_number=result["source"]["page_number"],
+                text=result["source"]["text"],
                 score=result["score"],
             )
             for result in results
         ]
-
         return SearchResponse(
             results=search_results,
             count=len(search_results),
@@ -68,7 +67,9 @@ async def search_documents(
             search_type=request.search_type,
         )
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e)
+        )
 
 
 @router.post("/rag", response_model=RAGResponse)

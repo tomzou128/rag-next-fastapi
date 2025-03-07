@@ -4,7 +4,7 @@
  * Service for interacting with the document management API endpoints.
  */
 import axiosInstance from "@/lib/axios";
-import { Document, DocumentUpdateResponse } from "@/types";
+import { Document, DocumentPresignedURLResponse, DocumentUpdateResponse, } from "@/types";
 
 /**
  * Upload a document with metadata
@@ -40,12 +40,11 @@ export async function getDocument(documentId: string): Promise<Document> {
   return response.data;
 }
 
-export async function downloadDocument(documentId: string): Promise<Blob> {
-  const response = await axiosInstance.get<Blob>(
-    `/documents/${documentId}/download`,
-    {
-      responseType: "blob",
-    },
+export async function downloadDocument(
+  documentId: string,
+): Promise<DocumentPresignedURLResponse> {
+  const response = await axiosInstance.get<DocumentPresignedURLResponse>(
+    `/documents/${documentId}/presigned`,
   );
   return response.data;
 }
