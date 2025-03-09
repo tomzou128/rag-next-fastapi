@@ -1,25 +1,14 @@
 import React from "react";
-import {
-  Box,
-  Button,
-  Card,
-  CardActions,
-  CardContent,
-  Container,
-  Typography,
-} from "@mui/material";
+import { Box, Button, Card, CardActions, CardContent, Container, Typography } from "@mui/material";
 import Grid from "@mui/material/Grid2";
 import Link from "next/link";
 import SearchIcon from "@mui/icons-material/Search";
 import FolderIcon from "@mui/icons-material/Folder";
 import QuestionAnswerIcon from "@mui/icons-material/QuestionAnswer";
-import AnalyticsIcon from "@mui/icons-material/Analytics";
-import { Toaster } from "sonner";
 
 export default function Home() {
   return (
     <Box component="main">
-      <Toaster />
       {/* Hero Section */}
       <Box
         sx={{
@@ -199,15 +188,16 @@ export default function Home() {
                 <Typography variant="h5" gutterBottom>
                   Retrieval Augmented Generation
                 </Typography>
-                <Typography paragraph>
+                <Typography>
                   RAG enhances large language models by providing them with
                   relevant context from your documents before generating
                   answers.
                 </Typography>
-                <Typography paragraph>
+                <Typography mb={1}>
                   When you ask a question, the system:
                 </Typography>
-                <Typography component="ol" sx={{ pl: 2 }}>
+
+                <Typography component="ol" sx={{ pl: 2, mb: 1 }}>
                   <li>Searches your documents for relevant information</li>
                   <li>Retrieves the most similar passages to your query</li>
                   <li>
@@ -216,7 +206,8 @@ export default function Home() {
                   <li>Generates an answer based on this specific context</li>
                   <li>Includes citations to help you verify the sources</li>
                 </Typography>
-                <Typography paragraph>
+
+                <Typography>
                   This approach leads to more accurate, reliable answers
                   grounded in your documents.
                 </Typography>
@@ -229,14 +220,11 @@ export default function Home() {
                   justifyContent: "center",
                   alignItems: "center",
                   height: "100%",
-                  p: 3,
                   bgcolor: "#f0f4f8",
                   borderRadius: 2,
                 }}
               >
-                <AnalyticsIcon
-                  sx={{ fontSize: 240, color: "rgba(25, 118, 210, 0.2)" }}
-                />
+                <img src="/rag.png" width="600px" />
               </Box>
             </Grid>
           </Grid>
@@ -248,7 +236,7 @@ export default function Home() {
         <Typography variant="h4" component="h2" gutterBottom>
           Ready to get started?
         </Typography>
-        <Typography variant="body1" paragraph sx={{ mb: 4 }}>
+        <Typography variant="body1" sx={{ mb: 4 }}>
           Upload your PDFs and start exploring your documents in a whole new
           way.
         </Typography>

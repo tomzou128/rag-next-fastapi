@@ -14,29 +14,15 @@ import {
   ListItem,
   ListItemText,
   Paper,
+  Stack,
   Typography,
 } from "@mui/material";
 import BookmarkIcon from "@mui/icons-material/Bookmark";
 import NavigateNextIcon from "@mui/icons-material/NavigateNext";
 import PictureAsPdfIcon from "@mui/icons-material/PictureAsPdf";
 import ReactMarkdown from "react-markdown";
-
-// Interface for search results
-interface SearchResult {
-  document_id: string;
-  document_title: string;
-  page_number?: number;
-  text: string;
-  score: number;
-}
-
-// Interface for citations
-interface Citation {
-  document_id: string;
-  document_title: string;
-  page_number?: number;
-  text: string;
-}
+import { Citation, SearchResult } from "@/types";
+import HighlightedText from "./HighlightedText";
 
 interface ResultDisplayProps {
   type: "search" | "rag";
@@ -47,12 +33,12 @@ interface ResultDisplayProps {
 }
 
 export default function ResultDisplay({
-  type,
-  results = [],
-  answer = "",
-  citations = [],
-  query = "",
-}: ResultDisplayProps) {
+                                        type,
+                                        results = [],
+                                        answer = "",
+                                        citations = [],
+                                        query = "",
+                                      }: ResultDisplayProps) {
   // State for expanded citations
   const [expandedCitation, setExpandedCitation] = useState<string | false>(
     false,
@@ -61,40 +47,6 @@ export default function ResultDisplay({
   // Handle citation expansion
   const handleCitationToggle = (citationId: string) => {
     setExpandedCitation(expandedCitation === citationId ? false : citationId);
-  };
-
-  // Highlight matching text (for search results)
-  const highlightMatches = (text: string, query: string) => {
-    if (!query) return text;
-
-    try {
-      // Create a regex to match the query (case insensitive)
-      const queryTerms = query
-        .split(" ")
-        .filter((term) => term.length > 2) // Skip short terms
-        .map((term) => term.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")); // Escape regex special chars
-
-      if (queryTerms.length === 0) return text;
-
-      const regex = new RegExp(`(${queryTerms.join("|")})`, "gi");
-
-      // Split text by matches
-      const parts = text.split(regex);
-
-      // Render with highlights
-      return parts.map((part, i) =>
-        regex.test(part) ? (
-          <mark key={i} style={{ backgroundColor: "#FFEB3B", padding: 0 }}>
-            {part}
-          </mark>
-        ) : (
-          part
-        ),
-      );
-    } catch (e) {
-      console.error("Error highlighting matches:", e);
-      return text;
-    }
   };
 
   // Render search results
@@ -106,6 +58,7 @@ export default function ResultDisplay({
             {index > 0 && <Divider component="li" />}
             <ListItem alignItems="flex-start" sx={{ py: 2 }}>
               <ListItemText
+                component="div"
                 primary={
                   <Box display="flex" alignItems="center" mb={0.5}>
                     <PictureAsPdfIcon
@@ -114,11 +67,11 @@ export default function ResultDisplay({
                       sx={{ mr: 1 }}
                     />
                     <Typography variant="subtitle1" component="span">
-                      {result.document_title}
+                      {result.filename}
                     </Typography>
-                    {result.page_number && (
+                    {result.pageNumber && (
                       <Chip
-                        label={`Page ${result.page_number}`}
+                        label={`Page ${result.pageNumber}`}
                         size="small"
                         sx={{ ml: 1 }}
                       />
@@ -127,9 +80,7 @@ export default function ResultDisplay({
                 }
                 secondary={
                   <Box mt={1}>
-                    <Typography
-                      component="div"
-                      variant="body2"
+                    <Box
                       color="text.primary"
                       sx={{
                         backgroundColor: "rgba(0, 0, 0, 0.04)",
@@ -138,8 +89,11 @@ export default function ResultDisplay({
                         whiteSpace: "pre-line",
                       }}
                     >
-                      {highlightMatches(result.text, query)}
-                    </Typography>
+                      <HighlightedText
+                        text={result.text}
+                        textHighlight={result.textHighlight}
+                      />
+                    </Box>
                     <Box
                       display="flex"
                       justifyContent="space-between"
@@ -214,23 +168,26 @@ export default function ResultDisplay({
                       }}
                       onClick={() => handleCitationToggle(citationId)}
                     >
-                      <Box display="flex" alignItems="center">
+                      <Stack direction="row" spacing={1} alignItems="center">
                         <BookmarkIcon
                           fontSize="small"
                           color="primary"
                           sx={{ mr: 1 }}
                         />
                         <Typography variant="subtitle2">
-                          {citation.document_title}
+                          {citation.marker}
                         </Typography>
-                        {citation.page_number && (
+                        <Typography variant="subtitle2">
+                          {citation.filename}
+                        </Typography>
+                        {citation.pageNumber && (
                           <Chip
-                            label={`Page ${citation.page_number}`}
+                            label={`Page ${citation.pageNumber}`}
                             size="small"
                             sx={{ ml: 1 }}
                           />
                         )}
-                      </Box>
+                      </Stack>
                       <IconButton
                         size="small"
                         sx={{

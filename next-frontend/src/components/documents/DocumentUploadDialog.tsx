@@ -8,16 +8,7 @@ import React, { useRef } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import {
-  Box,
-  Button,
-  Dialog,
-  DialogContent,
-  DialogTitle,
-  IconButton,
-  TextField,
-  Typography,
-} from "@mui/material";
+import { Box, Button, Dialog, DialogContent, DialogTitle, IconButton, TextField, Typography } from "@mui/material";
 import CloudUploadIcon from "@mui/icons-material/CloudUpload";
 import CloseIcon from "@mui/icons-material/Close";
 import PictureAsPdfIcon from "@mui/icons-material/PictureAsPdf";
@@ -25,36 +16,30 @@ import PictureAsPdfIcon from "@mui/icons-material/PictureAsPdf";
 interface DocumentUploadProps {
   onClose: () => void;
   open: boolean;
-  onUpload: (file: File, title: string, description?: string) => Promise<void>;
+  onUpload: (file: File, description?: string) => Promise<void>;
   disabled?: boolean;
 }
 
 // Define schema with zod for validation
 const documentUploadSchema = z.object({
-  title: z
-    .string()
-    .min(1, "Title is required")
-    .refine((title) => title.trim().length > 0, {
-      message: "Title cannot be empty or only spaces",
-    }),
-  description: z.string().optional(),
   file: z
     .instanceof(File, { message: "Please select a PDF file" })
     .refine(
       (file) => file.type === "application/pdf",
       "Only PDF files are allowed",
     ),
+  description: z.string().optional(),
 });
 
 // Create type from zod schema
 type DocumentUploadFormData = z.infer<typeof documentUploadSchema>;
 
 export default function DocumentUploadDialog({
-  onClose,
-  open,
-  onUpload,
-  disabled = false,
-}: DocumentUploadProps) {
+                                               onClose,
+                                               open,
+                                               onUpload,
+                                               disabled = false,
+                                             }: DocumentUploadProps) {
   // Reference to the hidden file input
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -69,7 +54,6 @@ export default function DocumentUploadDialog({
   } = useForm<DocumentUploadFormData>({
     resolver: zodResolver(documentUploadSchema),
     defaultValues: {
-      title: "",
       description: "",
     },
     mode: "onChange",
@@ -93,11 +77,9 @@ export default function DocumentUploadDialog({
    * Handle file removal
    */
   const handleRemoveFile = () => {
+    // @ts-expect-error remove file
     setValue("file", undefined, { shouldValidate: false });
-    // Reset the file input
-    if (fileInputRef.current) {
-      fileInputRef.current.value = "";
-    }
+    if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
   /**
@@ -107,7 +89,6 @@ export default function DocumentUploadDialog({
     try {
       await onUpload(
         data.file,
-        data.title,
         data.description && data.description.trim(),
       );
 
@@ -159,44 +140,6 @@ export default function DocumentUploadDialog({
 
       <DialogContent>
         <Box component="form" onSubmit={handleSubmit(onFormSubmit)} noValidate>
-          {/* Title input */}
-          <Controller
-            name="title"
-            control={control}
-            render={({ field }) => (
-              <TextField
-                {...field}
-                margin="normal"
-                required
-                fullWidth
-                id="title"
-                label="Document Title"
-                autoFocus
-                error={!!errors.title}
-                helperText={errors.title?.message}
-                disabled={disabled || isSubmitting}
-              />
-            )}
-          />
-
-          {/* Description input */}
-          <Controller
-            name="description"
-            control={control}
-            render={({ field }) => (
-              <TextField
-                {...field}
-                margin="normal"
-                fullWidth
-                id="description"
-                label="Description (Optional)"
-                multiline
-                rows={2}
-                disabled={disabled || isSubmitting}
-              />
-            )}
-          />
-
           {/* File upload section */}
           <Box mt={2} mb={3}>
             <input
@@ -265,12 +208,31 @@ export default function DocumentUploadDialog({
             )}
           </Box>
 
+          {/* Description input */}
+          <Controller
+            name="description"
+            control={control}
+            render={({ field }) => (
+              <TextField
+                {...field}
+                margin="normal"
+                fullWidth
+                id="description"
+                label="Description (Optional)"
+                multiline
+                rows={2}
+                disabled={disabled || isSubmitting}
+              />
+            )}
+          />
+
           {/* Submit button */}
           <Button
             type="submit"
             fullWidth
-            variant="text"
-            disabled={disabled || isSubmitting || !isValid}
+            variant="contained"
+            loading={isSubmitting}
+            disabled={disabled || !isValid}
             sx={{ mt: 2 }}
           >
             {isSubmitting ? "Uploading..." : "Upload Document"}

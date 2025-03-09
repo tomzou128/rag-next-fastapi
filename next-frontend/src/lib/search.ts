@@ -13,14 +13,18 @@ import type { RAGResponse, SearchResponse } from "@/types";
 export async function search(
   query: string,
   searchType: string = "hybrid",
-  topK: number = 5,
   documentIds?: string[],
+  page: number = 1,
+  pageSize: number = 10,
+  includeHighlight: boolean = false,
 ): Promise<SearchResponse> {
   const response = await axiosInstance.post<SearchResponse>("/search", {
     query,
-    search_type: searchType,
-    top_k: topK,
-    document_ids: documentIds,
+    searchType,
+    documentIds,
+    page,
+    pageSize,
+    includeHighlight,
   });
   return response.data;
 }
@@ -54,31 +58,20 @@ export async function generateStreamingRagAnswer(
   topK: number = 5,
   documentIds?: string[],
 ): Promise<EventSource> {
-  // Prepare the URL with query parameters
+  // Create URL with query parameters
   const url = new URL(`${API_URL}/search/rag/stream`, window.location.origin);
 
-  // Create a new EventSource for SSE
-  const eventSource = new EventSource(url.toString(), {
+  // Add query parameters to the URL
+  url.searchParams.append("query", query);
+  url.searchParams.append("search_type", searchType);
+  url.searchParams.append("top_k", topK.toString());
+  url.searchParams.append("stream", "true");
+  if (documentIds && documentIds.length > 0) {
+    documentIds.forEach(id => url.searchParams.append("document_ids", id));
+  }
+
+  // Now create a single EventSource that will make a GET request with the parameters
+  return new EventSource(url.toString(), {
     withCredentials: false,
   });
-
-  // Send the initial request to start the stream
-  fetch(url.toString(), {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      query,
-      search_type: searchType,
-      top_k: topK,
-      document_ids: documentIds,
-      stream: true,
-    }),
-  }).catch((error) => {
-    console.error("Error initiating streaming request:", error);
-    eventSource.close();
-    throw error;
-  });
-  return eventSource;
 }

@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import MainNavigation from "@/components/MainNavigation";
 import ThemeRegistry from "@/components/ThemeRegistry";
+import { Toaster } from "sonner";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -11,18 +12,17 @@ export const metadata: Metadata = {
   description: "Retrieval Augmented Generation for document search and Q&A",
 };
 
-export default function RootLayout({
-  children,
-}: Readonly<{
-  children: React.ReactNode;
-}>) {
+export default function RootLayout({ children }: Readonly<{ children: React.ReactNode; }>) {
   return (
     <html lang="en">
-      <body className={inter.className}>
-        <ThemeRegistry>
-          <MainNavigation>{children}</MainNavigation>
-        </ThemeRegistry>
-      </body>
+    <body className={inter.className}>
+    <ThemeRegistry>
+      <Toaster position="top-right" />
+      <MainNavigation>
+        {children}
+      </MainNavigation>
+    </ThemeRegistry>
+    </body>
     </html>
   );
 }

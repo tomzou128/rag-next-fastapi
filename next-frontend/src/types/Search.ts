@@ -1,25 +1,28 @@
 // Search result interface
 export interface SearchResult {
-  document_id: string;
-  document_title: string;
-  page_number?: number;
+  documentId: string;
+  filename: string;
+  pageNumber?: number;
   text: string;
+  textHighlight?: string[];
   score: number;
 }
 
 // Search response interface
 export interface SearchResponse {
   results: SearchResult[];
-  total: number;
+  total: number;   // total available in the databse
+  count: string;   // think about a better name for the real number of result returned
   query: string;
-  search_type: string;
+  searchType: string;
 }
 
 // Citation interface
 export interface Citation {
   document_id: string;
-  document_title: string;
-  page_number?: number;
+  filename: string;
+  marker: string;
+  pageNumber?: number;
   text: string;
 }
 

@@ -11,7 +11,6 @@ import {
   Autocomplete,
   Box,
   Button,
-  Chip,
   CircularProgress,
   FormControl,
   FormControlLabel,
@@ -21,7 +20,6 @@ import {
   Select,
   Switch,
   TextField,
-  Tooltip,
 } from "@mui/material";
 import Grid from "@mui/material/Grid2";
 import SearchIcon from "@mui/icons-material/Search";
@@ -29,9 +27,9 @@ import QuestionAnswerIcon from "@mui/icons-material/QuestionAnswer";
 import { listDocuments } from "@/lib/document";
 
 // Document type for autocomplete
-interface Document {
+interface DocumentSummary {
   id: string;
-  title: string;
+  filename: string;
 }
 
 interface SearchFormProps {
@@ -53,24 +51,20 @@ const createSearchFormSchema = (isRag: boolean) => {
     selectedDocuments: z.array(
       z.object({
         id: z.string(),
-        title: z.string(),
+        filename: z.string(),
       }),
     ),
     streaming: isRag ? z.boolean() : z.boolean().optional(),
   });
 };
 
-export default function SearchForm({
-  onSubmit,
-  isRag,
-  loading = false,
-}: SearchFormProps) {
+export default function SearchForm({ onSubmit, isRag, loading = false }: SearchFormProps) {
   // Create schema based on current isRag value
   const searchFormSchema = createSearchFormSchema(isRag);
   type SearchFormData = z.infer<typeof searchFormSchema>;
 
   // State for document loading
-  const [documents, setDocuments] = React.useState<Document[]>([]);
+  const [documents, setDocuments] = React.useState<DocumentSummary[]>([]);
   const [loadingDocuments, setLoadingDocuments] =
     React.useState<boolean>(false);
 
@@ -97,10 +91,9 @@ export default function SearchForm({
       setLoadingDocuments(true);
       const docs = await listDocuments();
 
-      // Map to simpler format for autocomplete
       const mappedDocs = docs.map((doc) => ({
         id: doc.id,
-        title: doc.title,
+        filename: doc.filename,
       }));
 
       setDocuments(mappedDocs);
@@ -155,7 +148,7 @@ export default function SearchForm({
                 placeholder={
                   isRag
                     ? "E.g., What are the main findings in the report?"
-                    : "E.g., climate change mitigation strategies"
+                    : "E.g., model architecture"
                 }
               />
             )}
@@ -222,38 +215,28 @@ export default function SearchForm({
 
         {/* Document filter */}
         <Grid size={{ xs: 12, md: isRag ? 4 : 6 }}>
-          <Tooltip title="Optionally filter search to specific documents">
-            <FormControl fullWidth disabled={loading}>
-              <Controller
-                name="selectedDocuments"
-                control={control}
-                render={({ field }) => (
-                  <Autocomplete
-                    {...field}
-                    multiple
-                    id="documents-filter"
-                    options={documents}
-                    loading={loadingDocuments}
-                    getOptionLabel={(option) => option.title}
-                    value={field.value}
-                    onChange={(_, newValue) => field.onChange(newValue)}
-                    onOpen={fetchDocuments}
-                    renderTags={(value, getTagProps) =>
-                      value.map((option, index) => (
-                        <Chip
-                          key={option.id}
-                          label={option.title}
-                          {...getTagProps({ index })}
-                          size="small"
-                        />
-                      ))
-                    }
-                    renderInput={(params) => (
-                      <TextField
-                        {...params}
-                        label="Filter by Documents"
-                        placeholder="All Documents"
-                        InputProps={{
+          <FormControl fullWidth disabled={loading}>
+            <Controller
+              name="selectedDocuments"
+              control={control}
+              render={({ field }) => (
+                <Autocomplete
+                  {...field}
+                  multiple
+                  id="documents-filter"
+                  options={documents}
+                  loading={loadingDocuments}
+                  getOptionLabel={(option) => option.filename}
+                  value={field.value}
+                  onChange={(_, newValue) => field.onChange(newValue)}
+                  onOpen={fetchDocuments}
+                  renderInput={(params) => (
+                    <TextField
+                      {...params}
+                      label="Filter by Documents"
+                      placeholder="All Documents"
+                      slotProps={{
+                        input: {
                           ...params.InputProps,
                           endAdornment: (
                             <>
@@ -263,33 +246,31 @@ export default function SearchForm({
                               {params.InputProps.endAdornment}
                             </>
                           ),
-                        }}
-                      />
-                    )}
-                  />
-                )}
-              />
-              <FormHelperText>
-                Leave empty to search all documents
-              </FormHelperText>
-            </FormControl>
-          </Tooltip>
+                        },
+                      }}
+                    />
+                  )}
+                />
+              )}
+            />
+            <FormHelperText>
+              Leave empty to search all documents
+            </FormHelperText>
+          </FormControl>
         </Grid>
 
         {/* Submit button */}
-        <Grid item xs={12}>
+        <Grid size={{ xs: 12 }}>
           <Button
             type="submit"
             variant="contained"
             startIcon={isRag ? <QuestionAnswerIcon /> : <SearchIcon />}
-            disabled={loading}
+            loading={loading}
             size="large"
             fullWidth
             sx={{ mt: 1 }}
           >
-            {loading ? (
-              <CircularProgress size={24} color="inherit" />
-            ) : isRag ? (
+            {isRag ? (
               "Generate Answer"
             ) : (
               "Search Documents"

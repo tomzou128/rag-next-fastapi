@@ -8,7 +8,6 @@ export interface Document {
   lastModified?: Date;
   metadata?: {
     filename: string;
-    title: string;
     description: string;
     pageCount: string;
     uploadDate?: Date;

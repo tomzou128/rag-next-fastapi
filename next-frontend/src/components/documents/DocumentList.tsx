@@ -40,18 +40,18 @@ import DocumentInfoDialog from "@/components/documents/DocumentInfoDialog";
 interface DocumentListProps {
   documents: Document[];
   loading?: boolean;
-  onUpload: (file: File, title: string, description?: string) => Promise<void>;
+  onUpload: (file: File, description?: string) => Promise<void>;
   onDownload: (documentId: string) => Promise<void>;
   onDelete: (documentId: string) => Promise<void>;
 }
 
 export default function DocumentList({
-  documents,
-  loading = false,
-  onUpload,
-  onDownload,
-  onDelete,
-}: DocumentListProps) {
+                                       documents,
+                                       loading = false,
+                                       onUpload,
+                                       onDownload,
+                                       onDelete,
+                                     }: DocumentListProps) {
   const [uploadDialogOpen, setUploadDialogOpen] = useState<boolean>(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState<boolean>(false);
   const [infoDialogOpen, setInfoDialogOpen] = useState<boolean>(false);
@@ -114,92 +114,113 @@ export default function DocumentList({
         <Table>
           <TableHead>
             <TableRow>
-              <TableCell>Document</TableCell>
-              <TableCell>File Info</TableCell>
-              <TableCell>Pages</TableCell>
-              <TableCell align="right">Actions</TableCell>
+              <TableCell width="30%" sx={{ minWidth: "200px" }}>Document</TableCell>
+              <TableCell width="20%" sx={{ minWidth: "150px" }}>File Info</TableCell>
+              <TableCell width="15%" sx={{ minWidth: "100px" }}>Pages</TableCell>
+              <TableCell width="15%" align="right">Actions</TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
-            {documents.map((document) => (
-              <TableRow
-                key={document.id}
-                sx={{ "&:last-child td, &:last-child th": { border: 0 } }}
-              >
-                <TableCell component="th" scope="row">
-                  <Stack direction="row" spacing={2} alignItems="center">
-                    <Avatar sx={{ bgcolor: "primary.main" }}>
-                      <PictureAsPdfIcon />
-                    </Avatar>
-                    <Box>
-                      <Typography
-                        variant="subtitle1"
-                        component="span"
-                        fontWeight="medium"
-                        id={`document-${document.id}`}
-                      >
-                        {document.metadata?.title || document.filename}
-                      </Typography>
-                      {document.metadata?.description && (
+            {documents.length > 0 ? (
+              documents.map((document) => (
+                <TableRow
+                  key={document.id}
+                  sx={{ "&:last-child td, &:last-child th": { border: 0 } }}
+                >
+                  <TableCell component="th" scope="row">
+                    <Stack direction="row" spacing={2} alignItems="center">
+                      <Avatar sx={{ bgcolor: "primary.main" }}>
+                        <PictureAsPdfIcon />
+                      </Avatar>
+                      <Box>
                         <Typography
-                          variant="body2"
-                          color="text.secondary"
-                          noWrap
+                          variant="subtitle1"
+                          component="span"
+                          fontWeight="medium"
+                          id={`document-${document.id}`}
                         >
-                          {document.metadata.description}
+                          {document.metadata?.title || document.filename}
                         </Typography>
-                      )}
-                    </Box>
-                  </Stack>
-                </TableCell>
-                <TableCell>
-                  <Typography variant="body2">
-                    {document.filename} • {formatFileSize(document.size)}
-                  </Typography>
-                </TableCell>
-                <TableCell>
-                  <Chip
-                    label={`${document.metadata?.pageCount} pages`}
-                    size="small"
-                    variant="outlined"
-                  />
-                </TableCell>
-                <TableCell align="right">
-                  <Stack
-                    direction="row"
-                    spacing={0.5}
-                    justifyContent="flex-end"
+                        {document.metadata?.description && (
+                          <Typography
+                            variant="body2"
+                            color="text.secondary"
+                            noWrap
+                          >
+                            {document.metadata.description}
+                          </Typography>
+                        )}
+                      </Box>
+                    </Stack>
+                  </TableCell>
+                  <TableCell>
+                    <Typography variant="body2">
+                      {document.filename} • {formatFileSize(document.size)}
+                    </Typography>
+                  </TableCell>
+                  <TableCell>
+                    <Chip
+                      label={`${document.metadata?.pageCount} pages`}
+                      size="small"
+                      variant="outlined"
+                    />
+                  </TableCell>
+                  <TableCell align="right">
+                    <Stack
+                      direction="row"
+                      spacing={0.5}
+                      justifyContent="flex-end"
+                    >
+                      <Tooltip title="Document Info">
+                        <IconButton
+                          size="small"
+                          disabled={loading}
+                          onClick={() => handleInfoClick(document)}
+                        >
+                          <InfoIcon />
+                        </IconButton>
+                      </Tooltip>
+
+                      <Tooltip title="Download">
+                        <IconButton
+                          size="small"
+                          disabled={loading}
+                          onClick={() => handleDownload(document)}
+                        >
+                          <DownloadIcon />
+                        </IconButton>
+                      </Tooltip>
+
+                      <Tooltip title="Delete">
+                        <IconButton
+                          size="small"
+                          disabled={loading}
+                          onClick={() => handleDeleteClick(document)}
+                        >
+                          <DeleteIcon />
+                        </IconButton>
+                      </Tooltip>
+                    </Stack>
+                  </TableCell>
+                </TableRow>
+              ))
+            ) : (
+              <TableRow>
+                <TableCell colSpan={4} sx={{ height: "300px", border: 0 }}>
+                  <Box
+                    display="flex"
+                    justifyContent="center"
+                    alignItems="center"
+                    height="100%"
                   >
-                    <Tooltip title="Document Info">
-                      <IconButton
-                        size="small"
-                        onClick={() => handleInfoClick(document)}
-                      >
-                        <InfoIcon />
-                      </IconButton>
-                    </Tooltip>
-
-                    <Tooltip title="Download">
-                      <IconButton
-                        size="small"
-                        onClick={() => handleDownload(document)}
-                      >
-                        <DownloadIcon />
-                      </IconButton>
-                    </Tooltip>
-
-                    <Tooltip title="Delete">
-                      <IconButton
-                        size="small"
-                        onClick={() => handleDeleteClick(document)}
-                      >
-                        <DeleteIcon />
-                      </IconButton>
-                    </Tooltip>
-                  </Stack>
+                    <Typography color="text.secondary">
+                      No documents uploaded yet. Upload your first PDF to get started!
+                    </Typography>
+                  </Box>
                 </TableCell>
               </TableRow>
-            ))}
+            )}
+
           </TableBody>
         </Table>
       </TableContainer>

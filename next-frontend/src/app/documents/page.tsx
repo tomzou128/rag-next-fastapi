@@ -1,21 +1,9 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import {
-  Box,
-  CircularProgress,
-  Container,
-  Paper,
-  Stack,
-  Typography,
-} from "@mui/material";
+import { Container, Paper, Stack, Typography } from "@mui/material";
 import DocumentList from "@/components/documents/DocumentList";
-import {
-  deleteDocument,
-  downloadDocument,
-  listDocuments,
-  uploadDocument,
-} from "@/lib/document";
+import { deleteDocument, downloadDocument, listDocuments, uploadDocument } from "@/lib/document";
 import type { Document } from "@/types";
 import { toast } from "sonner";
 
@@ -23,7 +11,6 @@ export default function DocumentsPage() {
   // State variables
   const [documents, setDocuments] = useState<Document[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
-  const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
 
   // Load documents on component mount
   useEffect(() => {
@@ -51,7 +38,6 @@ export default function DocumentsPage() {
    */
   const handleUpload = async (
     file: File,
-    title: string,
     description?: string,
   ) => {
     try {
@@ -59,7 +45,6 @@ export default function DocumentsPage() {
 
       const formData = new FormData();
       formData.append("file", file);
-      formData.append("title", title);
       if (description) formData.append("description", description);
 
       const response = await uploadDocument(formData);
@@ -121,35 +106,13 @@ export default function DocumentsPage() {
       {/* Document list section */}
       <Stack sx={{ flex: 1 }}>
         <Paper sx={{ p: 3, flex: 1 }}>
-          {loading ? (
-            <Box
-              display="flex"
-              justifyContent="center"
-              alignItems="center"
-              minHeight="300px"
-            >
-              <CircularProgress />
-            </Box>
-          ) : documents.length > 0 ? (
-            <DocumentList
-              documents={documents}
-              loading={loading}
-              onUpload={handleUpload}
-              onDownload={handleDownload}
-              onDelete={handleDelete}
-            />
-          ) : (
-            <Box
-              display="flex"
-              justifyContent="center"
-              alignItems="center"
-              minHeight="300px"
-            >
-              <Typography color="textSecondary">
-                No documents uploaded yet. Upload your first PDF to get started!
-              </Typography>
-            </Box>
-          )}
+          <DocumentList
+            documents={documents}
+            loading={loading}
+            onUpload={handleUpload}
+            onDownload={handleDownload}
+            onDelete={handleDelete}
+          />
         </Paper>
       </Stack>
     </Container>

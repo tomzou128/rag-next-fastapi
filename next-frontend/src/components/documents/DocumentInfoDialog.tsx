@@ -4,15 +4,7 @@
  * This component displays detailed information about a document in a dialog.
  */
 import React from "react";
-import {
-  Box,
-  Dialog,
-  DialogContent,
-  DialogTitle,
-  IconButton,
-  Stack,
-  Typography,
-} from "@mui/material";
+import { Box, Dialog, DialogContent, DialogTitle, IconButton, Stack, Typography } from "@mui/material";
 import DownloadIcon from "@mui/icons-material/DownLoad";
 import CloseIcon from "@mui/icons-material/Close";
 import type { Document } from "@/types";
@@ -26,16 +18,16 @@ interface DocumentInfoDialogProps {
 }
 
 export default function DocumentInfoDialog({
-  document,
-  open,
-  onClose,
-  onDownload,
-}: DocumentInfoDialogProps) {
+                                             document,
+                                             open,
+                                             onClose,
+                                             onDownload,
+                                           }: DocumentInfoDialogProps) {
   if (!document) return null;
   return (
     <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
       <DialogTitle>
-        Document Details
+        {document.filename}
         <Stack
           direction="row"
           spacing={1}
@@ -54,14 +46,15 @@ export default function DocumentInfoDialog({
         </Stack>
       </DialogTitle>
       <DialogContent sx={{ p: 4 }}>
-        <Typography variant="h6" gutterBottom>
-          {document.metadata?.title || document.filename}
-        </Typography>
-
         {document.metadata?.description && (
-          <Typography variant="body1" gutterBottom>
-            {document.metadata?.description}
-          </Typography>
+          <>
+            <Typography variant="h6" gutterBottom mt={2}>
+              Description
+            </Typography>
+            <Typography variant="body1" gutterBottom>
+              {document.metadata?.description}
+            </Typography>
+          </>
         )}
 
         <Typography variant="h6" gutterBottom mt={2}>
@@ -107,9 +100,9 @@ export default function DocumentInfoDialog({
 }
 
 const DocumentInfoRow = ({
-  title,
-  value,
-}: {
+                           title,
+                           value,
+                         }: {
   title: string;
   value: string;
 }) => (
