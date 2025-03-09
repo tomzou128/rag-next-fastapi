@@ -44,7 +44,7 @@ class RAGService:
 
         logger.info(f"RAG service initialized with model: {settings.OPENAI_MODEL_NAME}")
 
-    def _format_context(self, search_results: List[Dict[str, Any]]) -> str:
+    def _format_context(self, search_results: dict[str, Any]) -> str:
         """
         Format search results into context for the prompt.
 
@@ -56,11 +56,11 @@ class RAGService:
         """
         context_parts = []
 
-        for i, result in enumerate(search_results):
+        for i, result in enumerate(search_results["hits"]):
             context_part = (
-                f"[{i+1}] From document: '{result['document_title']}', "
-                f"Page: {result['page_number']}\n"
-                f"{result['text']}\n"
+                f"[{i+1}] From document: '{result["source"]['filename']}', "
+                f"Page: {result["source"]['page_number']}\n"
+                f"{result["source"]['text']}\n"
             )
             context_parts.append(context_part)
 
@@ -102,59 +102,86 @@ class RAGService:
         return system_prompt, user_prompt
 
     def _extract_citations(
-        self, answer: str, search_results: List[Dict[str, Any]]
+        self, answer: str, search_results: dict[str, Any]
     ) -> Tuple[str, List[Citation]]:
         """
-        Extract citation information from the generated answer.
+        Extract citation information from the generated answer and reorder markers sequentially.
 
         Args:
             answer: Generated answer with citation markers
             search_results: Original search results used for generation
 
         Returns:
-            Tuple of (cleaned answer, list of citations)
+            Tuple of (cleaned answer with reordered citation markers, list of citations)
         """
-        # Initialize citations list
-        citations = []
-        seen_citation_keys = set()
-
-        # Find all citation markers like [1], [2], etc.
         import re
 
-        citation_markers = re.findall(r"\[(\d+)\]", answer)
+        # Find all citation markers and their positions in the text
+        marker_positions = [
+            (m.start(), m.group(1)) for m in re.finditer(r"\[(\d+)\]", answer)
+        ]
 
-        for marker in citation_markers:
-            try:
-                # Convert to zero-based index
-                idx = int(marker) - 1
+        # If no citations found, return original answer
+        if not marker_positions:
+            return answer, []
 
-                if idx >= 0 and idx < len(search_results):
-                    result = search_results[idx]
-                    citation_key = f"{result['document_id']}_{result['page_number']}"
+        # Get the search result sources
+        search_sources = [hit["source"] for hit in search_results.get("hits", [])]
 
-                    # Avoid duplicate citations
-                    if citation_key not in seen_citation_keys:
-                        seen_citation_keys.add(citation_key)
+        # Track citations and their new indices
+        unique_markers = []
+        citations = []
+        marker_to_new_index = {}  # Maps original marker to new sequential index
 
-                        citation = Citation(
-                            document_id=result["document_id"],
-                            document_title=result["document_title"],
-                            page_number=result["page_number"],
-                            text=result["text"],
+        # Process markers in order of appearance
+        for _, marker in marker_positions:
+            if marker not in marker_to_new_index:
+                try:
+                    idx = int(marker) - 1
+
+                    if idx >= 0 and idx < len(search_sources):
+                        result_source = search_sources[idx]
+
+                        # Add to tracking
+                        unique_markers.append(marker)
+                        new_index = len(unique_markers)
+                        marker_to_new_index[marker] = new_index
+
+                        # Create citation
+                        citations.append(
+                            Citation(
+                                document_id=result_source["document_id"],
+                                filename=result_source["filename"],
+                                marker=f"[{new_index}]",
+                                page_number=result_source["page_number"],
+                                text=result_source["text"],
+                            )
                         )
+                    else:
+                        logger.warning(
+                            f"Citation marker [{marker}] refers to a non-existent search result"
+                        )
+                except (ValueError, IndexError) as e:
+                    logger.warning(f"Invalid citation marker: [{marker}] - {str(e)}")
 
-                        citations.append(citation)
-            except (ValueError, IndexError):
-                logger.warning(f"Invalid citation marker: [{marker}]")
+        # Replace all citation markers in reverse order to preserve positions
+        new_answer = answer
+        for pos, marker in sorted(marker_positions, reverse=True):
+            if marker in marker_to_new_index:
+                new_index = marker_to_new_index[marker]
+                new_marker = f"[{new_index}]"
+                new_answer = (
+                    new_answer[:pos] + new_marker + new_answer[pos + len(marker) + 2 :]
+                )
 
-        return answer, citations
+        return new_answer, citations
 
     async def generate_answer(
         self,
         query: str,
         search_type: SearchType = SearchType.HYBRID,
         top_k: int = 5,
-        document_ids: Optional[List[str]] = None,
+        document_ids: list[str] | None = None,
     ) -> RAGResponse:
         """
         Generate an answer using RAG approach.
@@ -170,11 +197,11 @@ class RAGService:
         """
         try:
             # Retrieve relevant context
-            search_results = await self.search_service.search(
+            search_results = await self.search_service.rag_context_query(
                 query=query,
                 search_type=search_type,
-                top_k=top_k,
                 document_ids=document_ids,
+                page_size=top_k,
             )
 
             if not search_results:
@@ -185,10 +212,8 @@ class RAGService:
                     query=query,
                 )
 
-            # Format context
+            # Format context and create prompt
             context = self._format_context(search_results)
-
-            # Create prompt
             system_prompt, user_prompt = self._create_rag_prompt(query, context)
 
             # Call OpenAI API
@@ -204,15 +229,10 @@ class RAGService:
 
             # Extract answer
             answer = response.choices[0].message.content
-
-            # Extract citations
             answer, citations = self._extract_citations(answer, search_results)
-
-            # Create response
             rag_response = RAGResponse(answer=answer, citations=citations, query=query)
 
             return rag_response
-
         except Exception as e:
             logger.error(f"Error generating RAG answer: {str(e)}")
             raise
@@ -238,10 +258,10 @@ class RAGService:
         """
         try:
             # Retrieve relevant context
-            search_results = await self.search_service.search(
+            search_results = await self.search_service.rag_context_query(
                 query=query,
                 search_type=search_type,
-                top_k=top_k,
+                page_size=top_k,
                 document_ids=document_ids,
             )
 
@@ -253,10 +273,8 @@ class RAGService:
                 }
                 return
 
-            # Format context
+            # Format context and create prompt
             context = self._format_context(search_results)
-
-            # Create prompt
             system_prompt, user_prompt = self._create_rag_prompt(query, context)
 
             # Call OpenAI API with streaming
@@ -283,11 +301,16 @@ class RAGService:
                     yield {"type": "answer", "content": content}
 
             # Extract and send citations after the answer is complete
-            _, citations = self._extract_citations(full_answer, search_results)
+            full_answer, citations = self._extract_citations(
+                full_answer, search_results
+            )
 
             yield {
                 "type": "citations",
-                "content": [citation.model_dump() for citation in citations],
+                "content": full_answer,
+                "citations": [
+                    citation.model_dump(by_alias=True) for citation in citations
+                ],
             }
 
         except Exception as e:

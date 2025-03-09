@@ -2,7 +2,7 @@ import io
 import logging
 import uuid
 from datetime import datetime
-from typing import BinaryIO, Dict, Tuple, Optional, Any
+from typing import BinaryIO, Dict, Any
 
 import boto3
 from botocore.client import Config
@@ -72,17 +72,15 @@ class StorageService:
     def upload_file(
         self,
         file_obj: BinaryIO,
-        filename: str,
         content_type: str,
-        file_id: Optional[str] = None,
-        metadata: Optional[Dict[str, str]] = None,
-    ) -> Dict[str, str] | None:
+        file_id: str | None = None,
+        metadata: dict[str, str] | None = None,
+    ) -> dict[str, str] | None:
         """
         Upload a file to storage.
 
         Args:
             file_obj: Binary file-like object to upload
-            filename: Original name of the file
             content_type: MIME type of the file
             file_id: Optional custom ID for the file, defaults to a UUID
             metadata: Optional additional metadata to store with the file
@@ -96,11 +94,6 @@ class StorageService:
         if file_id is None:
             file_id = str(uuid.uuid4())
 
-        # Prepare metadata
-        file_metadata = {"filename": filename}
-        if metadata:
-            file_metadata.update(metadata)
-
         try:
             # Reset file position to the beginning
             file_obj.seek(0)
@@ -112,16 +105,17 @@ class StorageService:
                 Key=file_id,
                 ExtraArgs={
                     "ContentType": content_type,
-                    "Metadata": file_metadata,
+                    "Metadata": metadata,
                 },
             )
 
-            logger.info(f"Uploaded file '{filename}' with ID {file_id}")
+            logger.info(
+                f"Uploaded file with ID {file_id}, content_type {content_type} and metadata {metadata}"
+            )
             return {
                 "id": file_id,
                 "content_type": content_type,
-                "filename": filename,
-                "metadata": file_metadata,
+                "metadata": metadata,
             }
         except Exception as e:
             error_msg = f"Error uploading file: {str(e)}"

@@ -11,7 +11,7 @@ from fastapi import UploadFile, HTTPException, Request
 from nltk.tokenize import sent_tokenize
 
 from app.config import settings
-from app.schemas.document import DocumentUpdateRequest
+from app.schemas.document import DocumentUpdateRequest, DocumentProcessResult
 from app.services.storage_service import StorageService
 
 logger = logging.getLogger(__name__)
@@ -58,19 +58,12 @@ class DocumentService:
 
     async def process_pdf(
         self, file: UploadFile, document_create: DocumentUpdateRequest
-    ) -> tuple[dict, list[dict[str, Any]]] | None:
+    ) -> DocumentProcessResult | None:
         """
         Process an uploaded PDF file:
         1. Upload to storage
         2. Extract text and metadata
         3. Chunk text for indexing
-
-        Args:
-            file: The uploaded PDF file
-            document_create: Document metadata provided by user
-
-        Returns:
-            Tuple of (document metadata, list of text chunks)
 
         Raises:
             HTTPException: If processing fails
@@ -81,31 +74,36 @@ class DocumentService:
             file_content = await file.read()
 
             # Process with PyMuPDF
-            doc_info, chunks = self._extract_pdf_content(
+            document_info, text_chunks = self._extract_pdf_content(
                 io.BytesIO(file_content), document_id
             )
+
+            upload_metadata = {
+                "filename": file.filename,
+                "description": document_create.description,
+                "page-count": str(document_info["page_count"]),
+                "upload-date": datetime.now(timezone.utc).isoformat(),
+            }
 
             # Upload to MinIO
             upload_result = self.storage_service.upload_file(
                 file_id=document_id,
                 file_obj=io.BytesIO(file_content),
-                filename=file.filename,
                 content_type=file.content_type,
-                metadata={
-                    "title": document_create.title,
-                    "description": document_create.description,
-                    "page-count": str(doc_info["page_count"]),
-                    "upload-date": datetime.now(timezone.utc).isoformat(),
-                },
+                metadata=upload_metadata,
             )
 
-            # Create document response
-            document_response = {
-                "id": document_id,
-                "filename": file.filename,
-            }
+            document_result = DocumentProcessResult(
+                id=upload_result["id"],
+                content_type=upload_result["content_type"],
+                filename=file.filename,
+                upload_date=datetime.fromisoformat(upload_metadata["upload-date"]),
+                page_count=document_info["page_count"],
+                metadata=document_info["metadata"],
+                text_chunks=text_chunks,
+            )
 
-            return document_response, chunks
+            return document_result
         except HTTPException:
             raise
         except Exception as e:
@@ -165,6 +163,12 @@ class DocumentService:
         finally:
             file_bytes.seek(0)
 
+    def _clean_text(self, text: str) -> str:
+        text = text.replace("\f", " ").strip()
+        text = re.sub(r"\s+", " ", text).strip()
+        text = re.sub(r"\n+", "\n", text).strip()
+        return text
+
     def _tokenize_text(self, text: str) -> List[str]:
         try:
             return sent_tokenize(text)
@@ -186,8 +190,8 @@ class DocumentService:
         Returns:
             List of chunk dictionaries with metadata
         """
-        # Clean text (remove excessive whitespace, etc.)
-        text = re.sub(r"\s+", " ", text).strip()
+        # Clean text
+        text = self._clean_text(text)
 
         # Use NLTK to split into sentences
         sentences = self._tokenize_text(text)
@@ -249,10 +253,12 @@ class DocumentService:
         """
         try:
             # Download document from storage
-            file_data, _, _ = self.storage_service.download_file(document_id)
+            download_response = self.storage_service.download_file(document_id)
 
             # Extract text and metadata
-            _, chunks = self._extract_pdf_content(file_data, document_id)
+            _, chunks = self._extract_pdf_content(
+                download_response.get("file_data"), document_id
+            )
             return chunks
 
         except HTTPException:

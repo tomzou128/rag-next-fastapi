@@ -1,4 +1,5 @@
 from datetime import datetime
+from typing import Any
 
 from pydantic import BaseModel, Field, ConfigDict, model_serializer
 from pydantic.alias_generators import to_camel
@@ -10,8 +11,7 @@ class DocumentUpdateRequest(BaseModel):
     """Schema for document update requests"""
 
     id: str | None = Field(None, description="Document ID")
-    title: str = Field(..., description="Document title")
-    description: str = Field(..., description="Document description")
+    description: str = Field(..., max_length=500, description="Document description")
 
 
 class DocumentUpdateResponse(BaseModel):
@@ -19,6 +19,18 @@ class DocumentUpdateResponse(BaseModel):
 
     id: str = Field(..., description="Document ID")
     filename: str = Field(..., description="Document filename")
+
+
+class DocumentProcessResult(BaseModel):
+    """Schema for document processing responses"""
+
+    id: str = Field(None, description="Document ID")
+    content_type: str = Field(..., description="Document content type")
+    filename: str = Field(..., description="Document filename")
+    upload_date: datetime = Field(..., description="Document upload date")
+    page_count: int = Field(..., description="Document page count")
+    metadata: dict = Field({}, description="Document metadata")
+    text_chunks: list[dict[str, Any]] = Field([], description="Document text chunks")
 
 
 class DocumentVO(BaseModel):

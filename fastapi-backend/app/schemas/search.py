@@ -1,7 +1,7 @@
 from enum import Enum
-from typing import List, Optional
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, ConfigDict
+from pydantic.alias_generators import to_camel
 
 
 class SearchType(str, Enum):
@@ -17,30 +17,38 @@ class SearchRequest(BaseModel):
 
     query: str = Field(..., description="Search query text")
     search_type: SearchType = Field(
-        default=SearchType.HYBRID, description="Type of search to perform"
+        SearchType.HYBRID, description="Type of search to perform"
     )
-    top_k: int = Field(default=5, description="Number of top results to return")
-    document_ids: Optional[List[str]] = Field(
-        None, description="Optional filter for specific documents"
+    document_ids: list[str] | None = Field(
+        default=None, description="Optional filter for specific documents"
     )
+    page: int = Field(default=1, description="Page number")
+    page_size: int = Field(default=20, description="Page size")
+    include_highlight: bool = Field(default=False, description="Include highlight")
+
+    model_config = ConfigDict(alias_generator=to_camel, populate_by_name=True)
 
 
 class SearchResult(BaseModel):
     """Schema for individual search result"""
 
     document_id: str = Field(..., description="Document ID")
-    document_title: str = Field(..., description="Document title")
-    page_number: Optional[int] = Field(
-        None, description="Page number where the text was found"
-    )
+    filename: str = Field(..., description="Document filename")
+    page_number: int = Field(..., description="Page number where the text was found")
     text: str = Field(..., description="Matched text chunk")
+    text_highlight: list[str] | None = Field(default=None, description="text highlight")
     score: float = Field(..., description="Relevance score")
+
+    model_config = ConfigDict(alias_generator=to_camel, populate_by_name=True)
 
 
 class SearchResponse(BaseModel):
     """Schema for search response"""
 
-    results: List[SearchResult] = Field(..., description="List of search results")
-    count: int = Field(0, description="Number of results returned")
-    search_type: SearchType = Field(..., description="The search type used")
+    results: list[SearchResult] = Field(..., description="List of search results")
+    total: int = Field(default=0, description="Total number of results")
+    count: int = Field(default=0, description="Number of results returned")
     query: str = Field(..., description="The original query")
+    search_type: SearchType = Field(..., description="The search type used")
+
+    model_config = ConfigDict(alias_generator=to_camel, populate_by_name=True)
