@@ -1,0 +1,100 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 450">
+    <!-- Background -->
+    <rect width="800" height="450" fill="#f8f9fa"/>
+
+    <!-- Frontend Box -->
+    <rect x="50" y="50" width="150" height="70" rx="5" fill="#e3f2fd" stroke="#2196f3" stroke-width="2"/>
+    <text x="125" y="80" font-family="Arial" font-size="16" text-anchor="middle" font-weight="bold">Frontend</text>
+    <text x="125" y="100" font-family="Arial" font-size="14" text-anchor="middle">(Next.js)</text>
+
+    <!-- Backend Box -->
+    <rect x="325" y="50" width="150" height="70" rx="5" fill="#e8f5e9" stroke="#4caf50" stroke-width="2"/>
+    <text x="400" y="80" font-family="Arial" font-size="16" text-anchor="middle" font-weight="bold">Backend</text>
+    <text x="400" y="100" font-family="Arial" font-size="14" text-anchor="middle">(FastAPI)</text>
+
+    <!-- MinIO Box -->
+    <rect x="600" y="50" width="150" height="70" rx="5" fill="#fff3e0" stroke="#ff9800" stroke-width="2"/>
+    <text x="675" y="80" font-family="Arial" font-size="16" text-anchor="middle" font-weight="bold">MinIO</text>
+    <text x="675" y="100" font-family="Arial" font-size="14" text-anchor="middle">(File Storage)</text>
+
+    <!-- Services Boxes -->
+    <rect x="130" y="200" width="120" height="60" rx="5" fill="#e0f7fa" stroke="#00bcd4" stroke-width="2"/>
+    <text x="190" y="225" font-family="Arial" font-size="14" text-anchor="middle" font-weight="bold">Document</text>
+    <text x="190" y="245" font-family="Arial" font-size="14" text-anchor="middle" font-weight="bold">Service</text>
+
+    <rect x="325" y="200" width="150" height="60" rx="5" fill="#e0f7fa" stroke="#00bcd4" stroke-width="2"/>
+    <text x="400" y="225" font-family="Arial" font-size="14" text-anchor="middle" font-weight="bold">Search</text>
+    <text x="400" y="245" font-family="Arial" font-size="14" text-anchor="middle" font-weight="bold">Service</text>
+
+    <rect x="550" y="200" width="120" height="60" rx="5" fill="#e0f7fa" stroke="#00bcd4" stroke-width="2"/>
+    <text x="610" y="225" font-family="Arial" font-size="14" text-anchor="middle" font-weight="bold">RAG</text>
+    <text x="610" y="245" font-family="Arial" font-size="14" text-anchor="middle" font-weight="bold">Service</text>
+
+    <!-- External Services -->
+    <rect x="325" y="330" width="150" height="60" rx="5" fill="#fff3e0" stroke="#ff9800" stroke-width="2"/>
+    <text x="400" y="355" font-family="Arial" font-size="14" text-anchor="middle" font-weight="bold">Elasticsearch
+    </text>
+    <text x="400" y="375" font-family="Arial" font-size="14" text-anchor="middle" font-weight="bold">(Vector Search)
+    </text>
+
+    <rect x="540" y="330" width="138" height="60" rx="5" fill="#fce4ec" stroke="#e91e63" stroke-width="2"/>
+    <text x="610" y="355" font-family="Arial" font-size="14" text-anchor="middle" font-weight="bold">OpenAI</text>
+    <text x="610" y="375" font-family="Arial" font-size="14" text-anchor="middle" font-weight="bold">(Text Generation)
+    </text>
+
+    <!-- Lines for connections -->
+    <!-- Frontend to Backend -->
+    <line x1="200" y1="85" x2="325" y2="85" stroke="#2196f3" stroke-width="2" stroke-dasharray="5,5"/>
+    <polygon points="315,85 325,85 320,80 325,85 320,90" fill="#2196f3"/>
+
+    <!-- Backend to Ninio -->
+    <line x1="475" y1="85" x2="600" y2="85" stroke="#4caf50" stroke-width="2" stroke-dasharray="5,5"/>
+    <polygon points="590,85 600,85 595,80 600,85 595,90" fill="#4caf50"/>
+
+    <!-- Backend to Services -->
+    <path d="M400 120 L400 150 L190 150 L190 200" fill="none" stroke="#4caf50" stroke-width="2"/>
+    <polygon points="190,190 185,200 190,195 195,200" fill="#4caf50"/>
+
+    <line x1="400" y1="120" x2="400" y2="200" stroke="#4caf50" stroke-width="2"/>
+    <polygon points="400,190 395,200 400,195 405,200" fill="#4caf50"/>
+
+    <path d="M400 120 L400 150 L610 150 L610 200" fill="none" stroke="#4caf50" stroke-width="2"/>
+    <polygon points="610,190 605,200 610,195 615,200" fill="#4caf50"/>
+
+    <!-- Service to Infrastructure -->
+    <line x1="400" y1="260" x2="400" y2="330" stroke="#00bcd4" stroke-width="2"/>
+    <polygon points="400,320 395,330 400,325 405,330" fill="#00bcd4"/>
+
+    <line x1="610" y1="260" x2="610" y2="330" stroke="#00bcd4" stroke-width="2"/>
+    <polygon points="610,320 605,330 610,325 615,330" fill="#00bcd4"/>
+
+    <!-- Connection between RAG and Search -->
+    <line x1="550" y1="230" x2="475" y2="230" stroke="#00bcd4" stroke-width="2"/>
+    <polygon points="485,230 475,230 480,225 475,230 480,235" fill="#00bcd4"/>
+
+    <!-- Document Flow Labels -->
+    <rect x="153" y="265" width="75" height="20" rx="5" fill="white" stroke="#888" stroke-width="1"/>
+    <text x="190" y="280" font-family="Arial" font-size="10" text-anchor="middle">PDF Processing</text>
+
+    <rect x="485" y="200" width="55" height="20" rx="5" fill="white" stroke="#888" stroke-width="1"/>
+    <text x="512.5" y="215" font-family="Arial" font-size="10" text-anchor="middle">Retrieval</text>
+
+    <rect x="380" y="395" width="40" height="20" rx="5" fill="white" stroke="#888" stroke-width="1"/>
+    <text x="400" y="408" font-family="Arial" font-size="10" text-anchor="middle">Query</text>
+
+    <!-- Legend -->
+    <rect x="50" y="330" width="190" height="110" rx="5" fill="white" stroke="#333" stroke-width="1"/>
+    <text x="145" y="350" font-family="Arial" font-size="14" text-anchor="middle" font-weight="bold">Layers</text>
+
+    <rect x="60" y="360" width="20" height="10" fill="#e3f2fd" stroke="#2196f3" stroke-width="1"/>
+    <text x="90" y="370" font-family="Arial" font-size="12" text-anchor="start">User Interface</text>
+
+    <rect x="60" y="380" width="20" height="10" fill="#e8f5e9" stroke="#4caf50" stroke-width="1"/>
+    <text x="90" y="390" font-family="Arial" font-size="12" text-anchor="start">API Layer</text>
+
+    <rect x="60" y="400" width="20" height="10" fill="#e0f7fa" stroke="#00bcd4" stroke-width="1"/>
+    <text x="90" y="410" font-family="Arial" font-size="12" text-anchor="start">Services</text>
+
+    <rect x="60" y="420" width="20" height="10" fill="#fce4ec" stroke="#e91e63" stroke-width="1"/>
+    <text x="90" y="430" font-family="Arial" font-size="12" text-anchor="start">External Services</text>
+</svg>
