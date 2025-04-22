@@ -125,9 +125,6 @@ MinIO and Elasticsearch.
     - MinIO Console: http://localhost:9001 (login: minioadmin/minioadmin)
     - Elasticsearch: http://localhost:9200
 
-## Production Setup
-
-(Working)
 
 ## Core API Endpoints
 
